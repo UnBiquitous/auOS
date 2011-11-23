@@ -77,12 +77,19 @@ class DeviceDriver : uOSDriver {
 class uOS{
    private:
      DeviceDriver deviceDriver;
+     void (* sendHook)(char *msg, int size);
    public:
      uOS(){
         //Destroy
      }
      ~uOS(){
         //Build
+     }
+     void setSendHook(void (* hook)(char *msg, int size)) {
+       sendHook = hook;
+     }
+     void receiveHook(char *msg, int size){
+       Serial.println("Received message"); 
      }
 };
 
