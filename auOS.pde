@@ -35,7 +35,7 @@ class uPMessage{
        aJson.addStringToObject(jsonMessage,param,value);
     }
     String getParameter(char* param){
-       aJsonObject* value = aJson.getObjectItem(jsonMessage, "param");
+       aJsonObject* value = aJson.getObjectItem(jsonMessage, param);
        return value->valuestring;
     }
 };
@@ -61,6 +61,7 @@ class uOSDriver{
        aJson.addStringToObject(service,"name", name);
        aJson.addItemToArray(services,service);
     }
+    aJsonObject* json(){return jsonDriver;}
 };
 
 class DeviceDriver : uOSDriver {
@@ -73,6 +74,9 @@ class DeviceDriver : uOSDriver {
      void callService(String name, uPMessage request, uPMessage response){
        if (name.equals("listDrivers")) {
            Serial.println("Listing drivers");
+           aJsonObject* list = aJson.createArray();
+           aJson.addItemToObject(list, "1",uOSDriver::json() );
+           response.addParameter("driverList",aJson.print(list));
            //TODO: List them
        }else if (name.equals("handshake")) {
            Serial.println("Return device data");
@@ -84,7 +88,7 @@ class DeviceDriver : uOSDriver {
 class uOS{
    private:
      DeviceDriver deviceDriver;
-     void (* sendHook)(char *msg);
+     char* (* sendHook)(char *msg);
    public:
      uOS(){
         //Destroy
@@ -92,10 +96,10 @@ class uOS{
      ~uOS(){
         //Build
      }
-     void setSendHook(void (* hook)(char *msg)) {
+     void setSendHook(char* (* hook)(char *msg)) {
        sendHook = hook;
      }
-     void receiveMessage(char *msg){
+     char* receiveMessage(char *msg){
        Serial.println("Received message");
        uPMessage request(msg);
        uPMessage response;
@@ -106,8 +110,8 @@ class uOS{
          }
        }
      }
-     void sendMessage(char *msg){
-       sendHook(msg);
+     char* sendMessage(char *msg){
+       return sendHook(msg);
      }
 };
 
@@ -117,7 +121,7 @@ void setup(){
   Serial.begin(9600); 
 }
 
-void myHook(char *msg){
+char* myHook(char *msg){
   Serial.print("Sending message:");
   Serial.println(msg);
 }
@@ -128,8 +132,9 @@ void loop(){
   Serial.println("SendHookTest: Should print message mymsg");
   uos.setSendHook(myHook);
   uos.sendMessage("mymsg");
-  Serial.println("ReceiveMessageTest: should print 'Listing Drivers'");
-  uos.receiveMessage("{type:'SERVICE_CALL_REQUEST',serviceType:'DISCRETE',driver:'br.unb.unbiquitous.ubiquitos.driver.DeviceDriver',service:'listDrivers',parameters:{driver:'DummyDriver'}}");
+  Serial.println("ReceiveMessageTest: should print 'Listing Drivers' and the response with the DeviceDriver");
+  char* response = uos.receiveMessage("{\"type\":\"SERVICE_CALL_REQUEST\",\"serviceType\":\"DISCRETE\",\"driver\":\"br.unb.unbiquitous.ubiquitos.driver.DeviceDriver\",\"service\":\"listDrivers\",\"parameters\":{\"driver\":\"DummyDriver\"}}");
+  Serial.print("Response:");Serial.println(response);
   //Serial.println("Printing the uPDriver of the DeviceDriver");
 //  Serial.println(driver.getDriver());
   //Serial.println("Oh no!");
