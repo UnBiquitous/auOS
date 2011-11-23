@@ -88,8 +88,11 @@ class uOS{
      void setSendHook(void (* hook)(char *msg, int size)) {
        sendHook = hook;
      }
-     void receiveHook(char *msg, int size){
+     void receiveMessage(char *msg, int size){
        Serial.println("Received message"); 
+     }
+     void sendMessage(char *msg, int size){
+       sendHook(msg,size);
      }
 };
 
@@ -99,9 +102,20 @@ void setup(){
   Serial.begin(9600); 
 }
 
+void myHook(char *msg, int size){
+  Serial.print("Sending ");
+  Serial.print(size);
+  Serial.print(" bytes of message :");
+  Serial.println(msg);
+}
+
+
 void loop(){
-  Serial.println("Printing the uPDriver of the DeviceDriver");
-  DeviceDriver driver;
-  Serial.println(driver.getDriver());
-  Serial.println("Oh no!");
+  Serial.println("\n\n\nTest Start");
+  Serial.println("SendHookTest");
+  uos.setSendHook(myHook);
+  uos.sendMessage("mymsg",5);
+  //Serial.println("Printing the uPDriver of the DeviceDriver");
+//  Serial.println(driver.getDriver());
+  //Serial.println("Oh no!");
 }
